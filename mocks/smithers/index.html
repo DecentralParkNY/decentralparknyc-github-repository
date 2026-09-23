@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decentral Park NYC — Mutual Aid Coordination</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --green-50:#f0fdf4;--green-100:#dcfce7;--green-200:#bbf7d0;--green-300:#86efac;
+    --green-400:#4ade80;--green-500:#22c55e;--green-600:#16a34a;--green-700:#15803d;
+    --green-800:#166534;--green-900:#14532d;--white:#fff;--gray-100:#f3f4f6;
+    --gray-200:#e5e7eb;--gray-400:#9ca3af;--gray-500:#6b7280;--gray-600:#4b5563;
+    --gray-700:#374151;--gray-800:#1f2937;
+  }
+  html{font-size:16px}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    background:var(--green-50);color:var(--gray-800);min-height:100vh;
+    display:flex;flex-direction:column;padding-bottom:72px}
+
+  /* ---------- screens ---------- */
+  .screen{display:none;flex:1;animation:fadeIn .3s ease}
+  .screen.active{display:flex;flex-direction:column}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* ---------- hero ---------- */
+  #hero{align-items:center;justify-content:center;text-align:center;
+    background:linear-gradient(160deg,var(--green-50) 0%,var(--green-100) 40%,var(--green-200) 100%);
+    padding:3rem 1.5rem;min-height:calc(100vh - 72px)}
+  .hero-icon{width:88px;height:88px;border-radius:50%;background:var(--green-700);
+    display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;
+    box-shadow:0 0 0 6px var(--green-200),0 8px 30px rgba(22,101,52,.25)}
+  .hero-icon svg{width:44px;height:44px;stroke:var(--white);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .hero-name{font-size:2.4rem;font-weight:800;color:var(--green-800);letter-spacing:-.02em;line-height:1.15;margin-bottom:.35rem}
+  .hero-sub{font-size:1rem;color:var(--green-600);font-weight:500;margin-bottom:1.8rem;letter-spacing:.01em}
+  .hero-pitch{font-size:1.25rem;font-weight:600;color:var(--green-900);max-width:480px;
+    margin:0 auto 2.5rem;line-height:1.45}
+
+  /* key interaction: pledge toggle */
+  .pledge-card{background:var(--white);border:2px solid var(--green-200);border-radius:16px;
+    padding:1.5rem 2rem;max-width:360px;margin:0 auto;box-shadow:0 4px 20px rgba(22,101,52,.08)}
+  .pledge-q{font-size:.95rem;color:var(--gray-700);margin-bottom:1rem;font-weight:500}
+  .toggle-row{display:flex;align-items:center;justify-content:center;gap:.75rem}
+  .toggle-label{font-size:.85rem;color:var(--gray-500);font-weight:500}
+  .toggle-label.on{color:var(--green-700);font-weight:700}
+  .toggle{width:56px;height:30px;border-radius:15px;background:var(--gray-200);
+    border:none;cursor:pointer;position:relative;transition:background .25s}
+  .toggle.active{background:var(--green-500)}
+  .toggle::after{content:'';position:absolute;top:3px;left:3px;width:24px;height:24px;
+    border-radius:50%;background:var(--white);transition:transform .25s;
+    box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .toggle.active::after{transform:translateX(26px)}
+  .pledge-count{margin-top:1rem;font-size:.8rem;color:var(--gray-400)}
+  .pledge-count span{color:var(--green-600);font-weight:700}
+
+  /* ---------- flow map ---------- */
+  #flow{padding:2rem 1.5rem;align-items:center}
+  #flow h2{font-size:1.5rem;font-weight:700;color:var(--green-800);margin-bottom:.5rem;text-align:center}
+  #flow .flow-sub{font-size:.9rem;color:var(--gray-500);margin-bottom:2rem;text-align:center}
+  .flow-grid{display:flex;flex-direction:column;gap:1rem;width:100%;max-width:400px}
+  .flow-box{display:block;text-decoration:none;background:var(--white);border:2px solid var(--green-200);
+    border-radius:12px;padding:1.1rem 1.4rem;transition:border-color .2s,box-shadow .2s;cursor:pointer}
+  .flow-box:hover{border-color:var(--green-400);box-shadow:0 2px 12px rgba(22,101,52,.1)}
+  .flow-box .fb-title{font-size:1rem;font-weight:700;color:var(--green-800);margin-bottom:.2rem}
+  .flow-box .fb-desc{font-size:.8rem;color:var(--gray-500)}
+  .flow-connector{width:2px;height:18px;background:var(--green-300);margin:0 auto;border-radius:1px}
+
+  /* ---------- placeholder screens ---------- */
+  .placeholder{padding:3rem 1.5rem;align-items:center;justify-content:center;text-align:center;
+    flex:1;min-height:calc(100vh - 72px)}
+  .placeholder .ph-badge{display:inline-block;background:var(--green-100);color:var(--green-700);
+    font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;
+    padding:.3rem .8rem;border-radius:20px;margin-bottom:1rem}
+  .placeholder h2{font-size:1.6rem;font-weight:700;color:var(--green-800);margin-bottom:.6rem}
+  .placeholder p{font-size:1rem;color:var(--gray-500);max-width:340px;line-height:1.5}
+
+  /* ---------- bottom nav ---------- */
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:64px;background:var(--white);
+    border-top:1px solid var(--green-100);display:flex;align-items:center;justify-content:space-around;
+    padding:0 .5rem;z-index:100;box-shadow:0 -2px 12px rgba(0,0,0,.04)}
+  .bottom-nav button{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;gap:2px;padding:.4rem .6rem;border-radius:8px;transition:background .15s;
+    min-width:56px}
+  .bottom-nav button:hover{background:var(--green-50)}
+  .bottom-nav button.active{background:var(--green-50)}
+  .bottom-nav button svg{width:22px;height:22px;stroke:var(--gray-400);fill:none;
+    stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:stroke .15s}
+  .bottom-nav button.active svg{stroke:var(--green-600)}
+  .bottom-nav button span{font-size:.65rem;color:var(--gray-400);font-weight:600;transition:color .15s}
+  .bottom-nav button.active span{color:var(--green-700)}
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div id="hero" class="screen active">
+  <div class="hero-icon">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" stroke-width="0" fill="rgba(255,255,255,.15)"/><path d="M17 8l-5 6-3-3"/><circle cx="12" cy="12" r="9.5"/></svg>
+  </div>
+  <div class="hero-name">Decentral Park</div>
+  <div class="hero-sub">NYC Mutual Aid Coordination</div>
+  <div class="hero-pitch">Your neighborhood&rsquo;s needs, matched to your neighbors&rsquo; offers &mdash; no landlord, no algorithm, no middleman.</div>
+
+  <div class="pledge-card">
+    <div class="pledge-q">I can contribute this week</div>
+    <div class="toggle-row">
+      <span class="toggle-label" id="lbl-off">Not now</span>
+      <button class="toggle" id="pledge-toggle" aria-label="Toggle availability"></button>
+      <span class="toggle-label" id="lbl-on">Available</span>
+    </div>
+    <div class="pledge-count"><span id="pledge-num">247</span> neighbors available this week</div>
+  </div>
+</div>
+
+<!-- ===== FLOW MAP ===== -->
+<div id="flow" class="screen">
+  <h2>App Flow</h2>
+  <p class="flow-sub">Main screens of the Decentral Park coordination app</p>
+  <div class="flow-grid">
+    <a class="flow-box" href="#/">
+      <div class="fb-title">Home</div>
+      <div class="fb-desc">Availability pledge &amp; neighborhood pulse</div>
+    </a>
+    <div class="flow-connector"></div>
+    <a class="flow-box" href="#/s/2">
+      <div class="fb-title">Need Board</div>
+      <div class="fb-desc">Post &amp; browse community requests</div>
+    </a>
+    <div class="flow-connector"></div>
+    <a class="flow-box" href="#/s/3">
+      <div class="fb-title">Match Engine</div>
+      <div class="fb-desc">Peer-to-peer offer/need matching</div>
+    </a>
+    <div class="flow-connector"></div>
+    <a class="flow-box" href="#/s/4">
+      <div class="fb-title">Trust Circle</div>
+      <div class="fb-desc">Reputation &amp; mutual vouching</div>
+    </a>
+    <div class="flow-connector"></div>
+    <a class="flow-box" href="#/flow">
+      <div class="fb-title">Flow Map</div>
+      <div class="fb-desc">This screen &mdash; app overview</div>
+    </a>
+  </div>
+</div>
+
+<!-- ===== PLACEHOLDER: Need Board ===== -->
+<div id="s2" class="screen placeholder">
+  <div class="ph-badge">Coming Next</div>
+  <h2>Need Board</h2>
+  <p>A live feed of community requests &mdash; groceries, childcare, legal aid, repair skills &mdash; posted by real neighbors, fulfilled by real neighbors.</p>
+</div>
+
+<!-- ===== PLACEHOLDER: Match Engine ===== -->
+<div id="s3" class="screen placeholder">
+  <div class="ph-badge">Coming Next</div>
+  <h2>Match Engine</h2>
+  <p>Cooperative matching that pairs what you can give with what someone nearby needs &mdash; no platform fee, no ranking algorithm, just solidarity.</p>
+</div>
+
+<!-- ===== PLACEHOLDER: Trust Circle ===== -->
+<div id="s4" class="screen placeholder">
+  <div class="ph-badge">Coming Next</div>
+  <h2>Trust Circle</h2>
+  <p>Mutual vouching and community reputation built on relationships, not ratings &mdash; because trust is earned through action, not stars.</p>
+</div>
+
+<!-- ===== BOTTOM NAV ===== -->
+<nav class="bottom-nav">
+  <button data-screen="/" aria-label="Home">
+    <svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg>
+    <span>Home</span>
+  </button>
+  <button data-screen="/flow" aria-label="Flow">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Flow</span>
+  </button>
+  <button data-screen="/s/2" aria-label="Needs">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    <span>Needs</span>
+  </button>
+  <button data-screen="/s/3" aria-label="Match">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <span>Match</span>
+  </button>
+  <button data-screen="/s/4" aria-label="Trust">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <span>Trust</span>
+  </button>
+</nav>
+
+<script>
+(function(){
+  var routes = {
+    '/':    'hero',
+    '/flow':'flow',
+    '/s/2': 's2',
+    '/s/3': 's3',
+    '/s/4': 's4'
+  };
+
+  function navigate(){
+    var hash = location.hash.replace('#','') || '/';
+    var screens = document.querySelectorAll('.screen');
+    for(var i=0;i<screens.length;i++) screens[i].classList.remove('active');
+    var target = document.getElementById(routes[hash]);
+    if(target) target.classList.add('active');
+    else document.getElementById('hero').classList.add('active');
+
+    var btns = document.querySelectorAll('.bottom-nav button');
+    for(var j=0;j<btns.length;j++){
+      btns[j].classList.toggle('active', btns[j].getAttribute('data-screen') === hash);
+    }
+  }
+
+  window.addEventListener('hashchange', navigate);
+
+  var navBtns = document.querySelectorAll('.bottom-nav button');
+  for(var k=0;k<navBtns.length;k++){
+    navBtns[k].addEventListener('click', function(){
+      location.hash = '#' + this.getAttribute('data-screen');
+    });
+  }
+
+  // Pledge toggle interaction
+  var toggle = document.getElementById('pledge-toggle');
+  var num = document.getElementById('pledge-num');
+  var lblOff = document.getElementById('lbl-off');
+  var lblOn = document.getElementById('lbl-on');
+  var pledged = false;
+  toggle.addEventListener('click', function(){
+    pledged = !pledged;
+    toggle.classList.toggle('active', pledged);
+    lblOn.classList.toggle('on', pledged);
+    lblOff.classList.toggle('on', !pledged);
+    num.textContent = pledged ? '248' : '247';
+  });
+
+  navigate();
+})();
+</script>
+</body>
+</html>
